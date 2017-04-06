@@ -24,7 +24,7 @@ This Google script uses a Google Sheet containing two different sheets. Into the
 | F2   | 28 Feb 2017           | The end of the date range. Note this is inclusive.                               |
 
 It should look like this:
-![alt text](raw/master/readme/settings.png "The settings sheet")
+![The settings sheet](readme/settings.png "The settings sheet")
 
 3. Copy the content of src/jira-data-google-script.js and paste it into the script editor in Tools > Script editor... on the top Google Sheets menu
 4. Save the script, close the script editor and return to the sheet
