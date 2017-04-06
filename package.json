@@ -1,0 +1,33 @@
+{
+  "name": "jira-data-google-script",
+  "version": "1.0.0",
+  "description": "A test-driven Google script that pulls closed ticket data from Jira into a Google Sheet.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/xurion/jira-data-google-script.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/xurion/jira-data-google-script/issues"
+  },
+  "homepage": "https://github.com/xurion/jira-data-google-script#readme",
+  "devDependencies": {
+    "grunt": "^0.4.5",
+    "grunt-contrib-clean": "^0.6.0",
+    "grunt-contrib-copy": "0.5.x",
+    "grunt-contrib-jshint": "~0.1.1",
+    "grunt-contrib-uglify": "^0.10.0",
+    "grunt-karma": "^2.0.0",
+    "jasmine-core": "^2.5.2",
+    "jqlite": "^0.2.41",
+    "jshint-stylish": "^2.2.1",
+    "karma": "^1.5.0",
+    "karma-chrome-launcher": "^2.0.0",
+    "karma-jasmine": "^1.1.0"
+  }
+}
