@@ -6,7 +6,7 @@ describe('JiraDataGoogleScript', function () {
 
     var jdgs,
         activeSpreadsheet,
-        app;
+        settingsSheet;
 
     function randomString() {
 
@@ -21,7 +21,15 @@ describe('JiraDataGoogleScript', function () {
     beforeEach(function () {
 
         activeSpreadsheet = new Spreadsheet();
+        settingsSheet = new Sheet();
         spyOn(SpreadsheetApp, 'getActiveSpreadsheet').and.returnValue(activeSpreadsheet);
+        spyOn(activeSpreadsheet, 'getSheetByName').and.callFake(function (sheetName) {
+
+            if (sheetName === 'Settings') {
+
+                return settingsSheet;
+            }
+        });
         jdgs = new JiraDataGoogleScript();
     });
 
@@ -153,6 +161,27 @@ describe('JiraDataGoogleScript', function () {
             jdgs.setCredentials();
 
             expect(Browser.msgBox).toHaveBeenCalledWith('Jira username and password saved.');
+        });
+    });
+
+    describe('getStartDateFromSettings()', function () {
+
+        it('should return the B2 cell data from the settings sheet as a Jira formatted date', function () {
+
+            var range = new Range(),
+                formattedDate = randomString(),
+                date = randomNumber(),
+                result;
+
+            spyOn(range, 'getValue').and.returnValue(date);
+            spyOn(settingsSheet, 'getRange').and.returnValue(range);
+            spyOn(Utilities, 'formatDate').and.returnValue(formattedDate);
+
+            result = jdgs.getStartDateFromSettings();
+
+            expect(result).toBe(formattedDate);
+            expect(settingsSheet.getRange).toHaveBeenCalledWith('B2');
+            expect(Utilities.formatDate).toHaveBeenCalledWith(new Date(date), "GMT", "yyyy/MM/dd");
         });
     });
 });

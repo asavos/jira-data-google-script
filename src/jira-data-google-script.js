@@ -21,6 +21,15 @@ function JiraDataGoogleScript() {
 
         Browser.msgBox('Jira username and password saved.');
     };
+
+    this.getStartDateFromSettings = function () {
+
+        var settingsSheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Settings'),
+            range = settingsSheet.getRange('B2'),
+            startDate = range.getValue();
+
+        return Utilities.formatDate(new Date(startDate), 'GMT', 'yyyy/MM/dd');
+    };
 }
 
 
@@ -38,7 +47,7 @@ function JiraDataGoogleScript() {
 //     ss.addMenu("Jira", menuEntries);
 // }
 //
-// function setJiraCredentials() {
+// function setJiraCredentials() { - converted to setCredentials()
 //
 //     var userAndPassword = Browser.inputBox("Enter your Jira On Demand User id and Password in the form User:Password. e.g. Tommy.Smith:ilovejira (Note: This will be base64 Encoded and saved as a property on the spreadsheet)", "Userid:Password", Browser.Buttons.OK_CANCEL);
 //     var x = Utilities.base64Encode(userAndPassword);

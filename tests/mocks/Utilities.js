@@ -1,4 +1,5 @@
 var Utilities = {
 
-    base64Encode: function () {}
+    base64Encode: function () {},
+    formatDate: function () {}
 };
