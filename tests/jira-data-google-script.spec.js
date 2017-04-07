@@ -4,10 +4,24 @@ describe('JiraDataGoogleScript', function () {
 
     'use strict';
 
-    var jdgs;
+    var jdgs,
+        activeSpreadsheet,
+        app;
+
+    function randomString() {
+
+        return Math.random().toString(36).replace(/[^a-z]+/g, '');
+    }
+
+    function randomNumber() {
+
+        return Math.ceil(Math.random() * 9999);
+    }
 
     beforeEach(function () {
 
+        activeSpreadsheet = new Spreadsheet();
+        spyOn(SpreadsheetApp, 'getActiveSpreadsheet').and.returnValue(activeSpreadsheet);
         jdgs = new JiraDataGoogleScript();
     });
 
@@ -20,28 +34,20 @@ describe('JiraDataGoogleScript', function () {
 
         it('should create a Jira menu item', function () {
 
-            var spreadsheet = {
-
-                addMenu: jasmine.createSpy('addMenu')
-            };
-            spyOn(SpreadsheetApp, 'getActiveSpreadsheet').and.returnValue(spreadsheet);
+            spyOn(activeSpreadsheet, 'addMenu');
 
             jdgs.init();
 
-            expect(spreadsheet.addMenu).toHaveBeenCalledWith('Jira', jasmine.any(Array));
+            expect(activeSpreadsheet.addMenu).toHaveBeenCalledWith('Jira', jasmine.any(Array));
         });
 
         it('should create a "Set credentials..." child menu item to the Jira menu', function () {
 
-            var menuItemsUsed,
-                spreadsheet = {
+            var menuItemsUsed;
+            spyOn(activeSpreadsheet, 'addMenu').and.callFake(function (menuName, menuItems) {
 
-                    addMenu: jasmine.createSpy('addMenu').and.callFake(function (menuName, menuItems) {
-
-                        menuItemsUsed = menuItems;
-                    })
-                };
-            spyOn(SpreadsheetApp, 'getActiveSpreadsheet').and.returnValue(spreadsheet);
+                menuItemsUsed = menuItems;
+            });
 
             jdgs.init();
 
@@ -50,34 +56,24 @@ describe('JiraDataGoogleScript', function () {
 
         it('should activate the setCredentials function when the "Set credentials..." child menu item is clicked', function () {
 
-            var menuItemsUsed,
-                spreadsheet = {
+            var menuItemsUsed;
+            spyOn(activeSpreadsheet, 'addMenu').and.callFake(function (menuName, menuItems) {
 
-                    addMenu: jasmine.createSpy('addMenu').and.callFake(function (menuName, menuItems) {
-
-                        menuItemsUsed = menuItems;
-                    })
-                };
-            spyOn(SpreadsheetApp, 'getActiveSpreadsheet').and.returnValue(spreadsheet);
+                menuItemsUsed = menuItems;
+            });
 
             jdgs.init();
 
             expect(menuItemsUsed[0].functionName).toBe('setCredentials');
         });
 
-
-
         it('should create a "Refresh data" child menu item to the Jira menu', function () {
 
-            var menuItemsUsed,
-                spreadsheet = {
+            var menuItemsUsed;
+            spyOn(activeSpreadsheet, 'addMenu').and.callFake(function (menuName, menuItems) {
 
-                    addMenu: jasmine.createSpy('addMenu').and.callFake(function (menuName, menuItems) {
-
-                        menuItemsUsed = menuItems;
-                    })
-                };
-            spyOn(SpreadsheetApp, 'getActiveSpreadsheet').and.returnValue(spreadsheet);
+                menuItemsUsed = menuItems;
+            });
 
             jdgs.init();
 
@@ -86,19 +82,77 @@ describe('JiraDataGoogleScript', function () {
 
         it('should activate the fetchJiraData function when the "Refresh data" child menu item is clicked', function () {
 
-            var menuItemsUsed,
-                spreadsheet = {
+            var menuItemsUsed;
+            spyOn(activeSpreadsheet, 'addMenu').and.callFake(function (menuName, menuItems) {
 
-                    addMenu: jasmine.createSpy('addMenu').and.callFake(function (menuName, menuItems) {
-
-                        menuItemsUsed = menuItems;
-                    })
-                };
-            spyOn(SpreadsheetApp, 'getActiveSpreadsheet').and.returnValue(spreadsheet);
+                menuItemsUsed = menuItems;
+            });
 
             jdgs.init();
 
             expect(menuItemsUsed[1].functionName).toBe('fetchJiraData');
+        });
+    });
+
+    describe('setCredentials()', function () {
+
+        it('should display a Google Sheet prompt that asks for the user ID and password', function () {
+
+            spyOn(Browser, 'inputBox');
+
+            jdgs.setCredentials();
+
+            expect(Browser.inputBox).toHaveBeenCalledWith('Enter your Jira user ID and password in the format user:password. For example, djames:whatever (Note: This data will be base64 encoded and saved as a property in the spreadsheet)', jasmine.any(String), jasmine.any(String));
+        });
+
+        it('should display a Google Sheet prompt with a field for user ID and password', function () {
+
+            spyOn(Browser, 'inputBox');
+
+            jdgs.setCredentials();
+
+            expect(Browser.inputBox).toHaveBeenCalledWith(jasmine.any(String), 'user:password', jasmine.any(String));
+        });
+
+        it('should display a Google Sheet prompt with ok and cancel buttons', function () {
+
+            var buttons = randomString();
+            spyOn(Browser, 'inputBox');
+            Browser.Buttons.OK_CANCEL = buttons;
+
+            jdgs.setCredentials();
+
+            expect(Browser.inputBox).toHaveBeenCalledWith(jasmine.any(String), jasmine.any(String), buttons);
+        });
+
+        it('should set the digest property using the input as a base64 encoded string for basic authentication', function () {
+
+            var userPass = randomString() + ':' + randomString(),
+                encodedUserPass = randomString(),
+                userProperties = {
+
+                    setProperty: jasmine.createSpy('setProperty')
+                };
+
+            spyOn(Browser, 'inputBox').and.returnValue(userPass);
+            spyOn(Utilities, 'base64Encode').and.returnValue(encodedUserPass);
+            spyOn(PropertiesService, 'getUserProperties').and.returnValue(userProperties);
+
+            jdgs.setCredentials();
+
+            expect(Utilities.base64Encode).toHaveBeenCalledWith(userPass);
+            expect(PropertiesService.getUserProperties).toHaveBeenCalled();
+            expect(userProperties.setProperty).toHaveBeenCalledWith('digest', 'Basic ' + encodedUserPass);
+        });
+
+        it('should display a Google Sheet message box after the credentials are saved', function () {
+
+            spyOn(Browser, 'inputBox').and.returnValue(randomString());
+            spyOn(Browser, 'msgBox');
+
+            jdgs.setCredentials();
+
+            expect(Browser.msgBox).toHaveBeenCalledWith('Jira username and password saved.');
         });
     });
 });

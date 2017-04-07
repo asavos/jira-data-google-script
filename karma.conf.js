@@ -8,7 +8,7 @@ module.exports = function (config) {
 
         basePath: './',
         frameworks: ['jasmine'],
-        singleRun: true,
+        singleRun: false,
         files: [
             'src/**/*.js',
             'tests/**/*.js'

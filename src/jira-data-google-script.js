@@ -10,15 +10,26 @@ function JiraDataGoogleScript() {
             {name: 'Refresh data', functionName: 'fetchJiraData'}
         ]);
     };
+
+    this.setCredentials = function () {
+
+        var rawCredentials = Browser.inputBox('Enter your Jira user ID and password in the format user:password. For example, djames:whatever (Note: This data will be base64 encoded and saved as a property in the spreadsheet)', 'user:password', Browser.Buttons.OK_CANCEL),
+            properties = PropertiesService.getUserProperties(),
+            encodedCredentials = Utilities.base64Encode(rawCredentials);
+
+        properties.setProperty('digest', 'Basic ' + encodedCredentials);
+
+        Browser.msgBox('Jira username and password saved.');
+    };
 }
 
 
 //original script:
 
 //
-// var C_MAX_RESULTS = 1000;
+// var C_MAX_RESULTS = 1000; - converted to maxResults property
 //
-// function onOpen(){
+// function onOpen(){ - converted to init()
 //     var ss = SpreadsheetApp.getActiveSpreadsheet();
 //     var menuEntries = [
 //         {name: "Set Jira credentials", functionName: "setJiraCredentials"},

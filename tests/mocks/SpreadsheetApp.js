@@ -1,3 +1,4 @@
 var SpreadsheetApp = {
+
     getActiveSpreadsheet: function () {}
 };
