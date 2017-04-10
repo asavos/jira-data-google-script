@@ -17,7 +17,7 @@ function JiraDataGoogleScript() {
             properties = PropertiesService.getUserProperties(),
             encodedCredentials = Utilities.base64Encode(rawCredentials);
 
-        properties.setProperty('digest', 'Basic ' + encodedCredentials);
+        properties.setProperty('credentials', 'Basic ' + encodedCredentials);
 
         Browser.msgBox('Jira username and password saved.');
     };
@@ -29,6 +29,44 @@ function JiraDataGoogleScript() {
             startDate = range.getValue();
 
         return Utilities.formatDate(new Date(startDate), 'GMT', 'yyyy/MM/dd');
+    };
+
+    this.getEndDateFromSettings = function () {
+
+        var settingsSheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Settings'),
+            range = settingsSheet.getRange('B3'),
+            endDate = range.getValue();
+
+        return Utilities.formatDate(new Date(endDate), 'GMT', 'yyyy/MM/dd');
+    };
+
+    this.fetchFromJira = function (path) {
+
+        var credentials = PropertiesService.getUserProperties().getProperty('credentials'),
+            response;
+
+        if (credentials === null) {
+
+            Browser.msgBox('Jira authentication required. Select Jira > Set Jira credentials.');
+        }
+
+        response = UrlFetchApp.fetch('https://brighttalktech.jira.com/rest/api/2/' + path, {
+
+            Accept: 'application/json',
+            method: 'GET',
+            muteHttpExceptions: true,
+            headers: {
+
+                Authorization: credentials
+            }
+        });
+
+        if (response.getResponseCode() !== 200) {
+
+            Browser.msgBox('Unexpected error fetching data from Jira API.');
+        }
+
+        return response.getContentText();
     };
 }
 
@@ -56,30 +94,26 @@ function JiraDataGoogleScript() {
 //     Browser.msgBox("Jira username and password saved.");
 // }
 //
-// function jiraPullManual() {
+// function jiraPullManual() { - not done
 //     jiraPull();
 // }
 //
-// function getFields() {
+// function getFields() { - not done
 //     return JSON.parse(getDataForAPI("field"));
 // }
 //
-// function getStartDateFromSettings() {
+// function getStartDateFromSettings() { - done
 //     var ss = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Settings");
 //     var range = ss.getRange("B2");
 //     var startDate = new Date(range.getValue());
 //     return Utilities.formatDate(startDate, "GMT", "yyyy/MM/dd");
 // }
 //
-// function getEndDateFromSettings() {
+// function getEndDateFromSettings() { - done
 //     var ss = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Settings");
 //     var range = ss.getRange("B3");
 //     var endDate = new Date(range.getValue());
 //     return Utilities.formatDate(endDate, "GMT", "yyyy/MM/dd");
-// }
-//
-// function getSettings() {
-//
 // }
 //
 // function getStories() {
@@ -99,7 +133,7 @@ function JiraDataGoogleScript() {
 //     return allData;
 // }
 //
-// function getDataForAPI(path) {
+// function getDataForAPI(path) { - named fetchFromJira
 //     var url = "https://brighttalktech.jira.com/rest/api/2/" + path;
 //     var digestfull = PropertiesService.getUserProperties().getProperty("digest");
 //

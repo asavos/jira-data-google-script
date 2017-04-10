@@ -1,0 +1,4 @@
+var UrlFetchApp = {
+
+    fetch: function () {}
+};

@@ -4,7 +4,11 @@ var PropertiesService = {
 
         return {
 
-            setProperty: function () {}
+            setProperty: function () {},
+            getProperty: function () {
+
+                return '';
+            }
         };
     }
 };

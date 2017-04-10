@@ -6,7 +6,9 @@ describe('JiraDataGoogleScript', function () {
 
     var jdgs,
         activeSpreadsheet,
-        settingsSheet;
+        settingsSheet,
+        userProperties,
+        response;
 
     function randomString() {
 
@@ -22,6 +24,12 @@ describe('JiraDataGoogleScript', function () {
 
         activeSpreadsheet = new Spreadsheet();
         settingsSheet = new Sheet();
+        userProperties = {
+
+            setProperty: jasmine.createSpy('setProperty'),
+            getProperty: jasmine.createSpy('getProperty')
+        };
+        response = new Response();
         spyOn(SpreadsheetApp, 'getActiveSpreadsheet').and.returnValue(activeSpreadsheet);
         spyOn(activeSpreadsheet, 'getSheetByName').and.callFake(function (sheetName) {
 
@@ -30,6 +38,9 @@ describe('JiraDataGoogleScript', function () {
                 return settingsSheet;
             }
         });
+        spyOn(PropertiesService, 'getUserProperties').and.returnValue(userProperties);
+        spyOn(UrlFetchApp, 'fetch').and.returnValue(response);
+
         jdgs = new JiraDataGoogleScript();
     });
 
@@ -133,24 +144,19 @@ describe('JiraDataGoogleScript', function () {
             expect(Browser.inputBox).toHaveBeenCalledWith(jasmine.any(String), jasmine.any(String), buttons);
         });
 
-        it('should set the digest property using the input as a base64 encoded string for basic authentication', function () {
+        it('should set the credentials property using the input as a base64 encoded string for basic authentication', function () {
 
             var userPass = randomString() + ':' + randomString(),
-                encodedUserPass = randomString(),
-                userProperties = {
-
-                    setProperty: jasmine.createSpy('setProperty')
-                };
+                encodedUserPass = randomString();
 
             spyOn(Browser, 'inputBox').and.returnValue(userPass);
             spyOn(Utilities, 'base64Encode').and.returnValue(encodedUserPass);
-            spyOn(PropertiesService, 'getUserProperties').and.returnValue(userProperties);
 
             jdgs.setCredentials();
 
             expect(Utilities.base64Encode).toHaveBeenCalledWith(userPass);
             expect(PropertiesService.getUserProperties).toHaveBeenCalled();
-            expect(userProperties.setProperty).toHaveBeenCalledWith('digest', 'Basic ' + encodedUserPass);
+            expect(userProperties.setProperty).toHaveBeenCalledWith('credentials', 'Basic ' + encodedUserPass);
         });
 
         it('should display a Google Sheet message box after the credentials are saved', function () {
@@ -184,4 +190,197 @@ describe('JiraDataGoogleScript', function () {
             expect(Utilities.formatDate).toHaveBeenCalledWith(new Date(date), "GMT", "yyyy/MM/dd");
         });
     });
+
+    describe('getEndDateFromSettings()', function () {
+
+        it('should return the B3 cell data from the settings sheet as a Jira formatted date', function () {
+
+            var range = new Range(),
+                formattedDate = randomString(),
+                date = randomNumber(),
+                result;
+
+            spyOn(range, 'getValue').and.returnValue(date);
+            spyOn(settingsSheet, 'getRange').and.returnValue(range);
+            spyOn(Utilities, 'formatDate').and.returnValue(formattedDate);
+
+            result = jdgs.getEndDateFromSettings();
+
+            expect(result).toBe(formattedDate);
+            expect(settingsSheet.getRange).toHaveBeenCalledWith('B3');
+            expect(Utilities.formatDate).toHaveBeenCalledWith(new Date(date), "GMT", "yyyy/MM/dd");
+        });
+    });
+
+    describe('fetchFromJira()', function () {
+
+        it('should display a message box if user credentials have not been set', function () {
+
+            userProperties.getProperty.and.returnValue(null);
+            spyOn(Browser, 'msgBox');
+
+            jdgs.fetchFromJira();
+
+            expect(userProperties.getProperty).toHaveBeenCalledWith('credentials');
+            expect(Browser.msgBox).toHaveBeenCalledTimes(1);
+            expect(Browser.msgBox).toHaveBeenCalledWith('Jira authentication required. Select Jira > Set Jira credentials.');
+        });
+
+        it('should return an empty string if user credentials have not been set', function () {
+
+            userProperties.getProperty.and.returnValue(null);
+
+            expect(jdgs.fetchFromJira()).toBe('');
+        });
+
+        it('should return an empty string if the response from Jira is not a status code of 200', function () {
+
+            spyOn(response, 'getResponseCode').and.returnValue(404);
+            userProperties.getProperty.and.returnValue(randomString());
+
+            expect(jdgs.fetchFromJira()).toBe('');
+        });
+
+        it('should display a message box if the response from Jira is not a status code of 200', function () {
+
+            spyOn(response, 'getResponseCode').and.returnValue(404);
+            spyOn(Browser, 'msgBox');
+            userProperties.getProperty.and.returnValue(randomString());
+
+            jdgs.fetchFromJira();
+
+            expect(Browser.msgBox).toHaveBeenCalledTimes(1);
+            expect(Browser.msgBox).toHaveBeenCalledWith('Unexpected error fetching data from Jira API.');
+        });
+
+        it('should call the Jira rest API using the given path argument', function () {
+
+            var path = randomString(),
+                url = 'https://brighttalktech.jira.com/rest/api/2/' + path;
+
+            userProperties.getProperty.and.returnValue(randomString());
+
+            jdgs.fetchFromJira(path);
+
+            expect(UrlFetchApp.fetch).toHaveBeenCalledWith(url, jasmine.any(Object));
+        });
+
+        it('should call the Jira rest API requesting JSON format', function () {
+
+            var headersUsed = {};
+            UrlFetchApp.fetch.and.callFake(function (path, headers) {
+
+                headersUsed = headers;
+                return response;
+            });
+            userProperties.getProperty.and.returnValue(randomString());
+
+            jdgs.fetchFromJira(randomString());
+
+            expect(headersUsed.Accept).toBe('application/json');
+        });
+
+        it('should call the Jira rest API using the GET method', function () {
+
+            var headersUsed = {};
+            UrlFetchApp.fetch.and.callFake(function (path, headers) {
+
+                headersUsed = headers;
+                return response;
+            });
+            userProperties.getProperty.and.returnValue(randomString());
+
+            jdgs.fetchFromJira(randomString());
+
+            expect(headersUsed.method).toBe('GET');
+        });
+
+        it('should call the Jira rest API with authorization data using the saved user credentials', function () {
+
+            var credentials = randomString(),
+                headersUsed = {};
+
+            userProperties.getProperty.and.returnValue(credentials);
+            UrlFetchApp.fetch.and.callFake(function (path, headers) {
+
+                headersUsed = headers;
+                return response;
+            });
+
+            jdgs.fetchFromJira(randomString());
+
+            expect(userProperties.getProperty).toHaveBeenCalledWith('credentials');
+            expect(headersUsed.headers.Authorization).toBe(credentials);
+        });
+
+        it('should call the Jira rest API with muted HTTP exceptions', function () {
+
+            var headersUsed = {};
+            userProperties.getProperty.and.returnValue(randomString());
+            UrlFetchApp.fetch.and.callFake(function (path, headers) {
+
+                headersUsed = headers;
+                return response;
+            });
+
+            jdgs.fetchFromJira(randomString());
+
+            expect(headersUsed.muteHttpExceptions).toBe(true);
+        });
+
+        it('should return the content text of the response', function () {
+
+            var headersUsed = {},
+                responseText = randomString(),
+                result;
+
+            spyOn(response, 'getContentText').and.returnValue(responseText);
+            userProperties.getProperty.and.returnValue(randomString());
+            UrlFetchApp.fetch.and.callFake(function (path, headers) {
+
+                headersUsed = headers;
+                return response;
+            });
+
+            result = jdgs.fetchFromJira(randomString());
+
+            expect(response.getContentText).toHaveBeenCalled();
+            expect(result).toBe(responseText);
+        });
+    });
+
+    // describe('fetchTicketsFromJira()', function () {
+    //
+    //     it('should ', function () {
+    //
+    //
+    //     });
+
+        //point to the right project in JQL
+        //point to the right closed status in JQL
+        //point to the right ticket types in JQL
+        //point to the right inStatus statuses in JQL
+        //use the right startDate in JQL
+        //use the right endDate in JQL
+        //use the order by resolution date in JQL
+
+
+// function getStories() {
+//     var allData = {issues: []};
+//     var data = {startAt: 0,maxResults: 0,total: 1};
+//     var startDate = getStartDateFromSettings();
+//     var endDate = getEndDateFromSettings();
+//     var jql = "project%20%3D%20%22Content%20Team%22%20and%20status%20%3D%20done%20and%20type%20in%20(bug%2Cstory%2C%27technical%20story%27)%20and%20status%20was%20%22in%20development%22and%20resolutiondate%20%3E%20'" + startDate + "'%20and%20resolutiondate%20%3C%20'" + endDate + "'%20order%20by%20resolutiondate%20DESC";
+//     //Logger.log(jql);
+//
+//     while (data.startAt + data.maxResults < data.total) {
+//         data = JSON.parse(getDataForAPI("search?jql=" + jql + "&expand=changelog&maxResults=" + C_MAX_RESULTS));
+//         allData.issues = allData.issues.concat(data.issues);
+//         startAt = data.startAt + data.maxResults;
+//     }
+//
+//     return allData;
+// }
+//     });
+
 });
