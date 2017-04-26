@@ -1,0 +1,20 @@
+{
+  "name": "jira-data-google-script",
+  "description": "A test-driven Google script that pulls closed ticket data from Jira into a Google Sheet.",
+  "main": "index.js",
+  "authors": [
+    "Dean James <djames@brighttalk.com>"
+  ],
+  "license": "ISC",
+  "homepage": "https://github.com/xurion/jira-data-google-script",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "devDependencies": {
+    "simple-url": "^3.0.0"
+  }
+}

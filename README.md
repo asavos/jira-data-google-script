@@ -14,14 +14,14 @@ This Google script uses a Google Sheet containing two different sheets. Into the
 | B1   | My project            | Use the name of your Jira project here.                                          |
 | A2   | Issue types           |                                                                                  |
 | B2   | Story,Bug,"Tech task" | Comma-separated list of your project issue types. Wrap multiple words in quotes. |
-| C1   | Status qualifier      |                                                                                  |
-| C2   | In dev                | The status the ticket must have reached in order to be pulled from Jira.         |
-| D1   | Closed status         |                                                                                  |
-| D2   | Closed                | The status of a ticket when it is closed.                                        |
-| E1   | From                  |                                                                                  |
-| E2   | 25 Feb 2017           | The start of the date range.                                                     |
-| F1   | To                    |                                                                                  |
-| F2   | 28 Feb 2017           | The end of the date range. Note this is inclusive.                               |
+| A3   | Status qualifier      |                                                                                  |
+| B3   | In dev                | The status the ticket must have reached in order to be pulled from Jira.         |
+| A4   | Closed status         |                                                                                  |
+| B4   | Closed                | The status of a ticket when it is closed.                                        |
+| A5   | From                  |                                                                                  |
+| B5   | 25 Feb 2017           | The start of the date range.                                                     |
+| A6   | To                    |                                                                                  |
+| B6   | 28 Feb 2017           | The end of the date range. Note this is inclusive.                               |
 
 It should look something like this:
 ![The settings sheet](readme/settings.png "The settings sheet")

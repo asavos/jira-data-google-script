@@ -349,21 +349,143 @@ describe('JiraDataGoogleScript', function () {
         });
     });
 
-    // describe('fetchTicketsFromJira()', function () {
-    //
-    //     it('should ', function () {
-    //
-    //
-    //     });
+    describe('fetchTicketsFromJira()', function () {
 
-        //point to the right project in JQL
-        //point to the right closed status in JQL
-        //point to the right ticket types in JQL
-        //point to the right inStatus statuses in JQL
-        //use the right startDate in JQL
-        //use the right endDate in JQL
-        //use the order by resolution date in JQL
+        var projectNameRange,
+            projectName,
+            closedStatusRange,
+            closedStatus,
+            ticketTypesRange,
+            ticketTypes;
 
+        beforeEach(function () {
+
+            projectNameRange = new Range();
+            projectName = randomString();
+            spyOn(projectNameRange, 'getValue').and.callFake(function () {
+
+                return projectName;
+            });
+
+            closedStatusRange = new Range();
+            closedStatus = randomString();
+            spyOn(closedStatusRange, 'getValue').and.callFake(function () {
+
+                return closedStatus;
+            });
+
+            ticketTypesRange = new Range();
+            ticketTypes = randomString();
+            spyOn(ticketTypesRange, 'getValue').and.callFake(function () {
+
+                return ticketTypes;
+            });
+
+            spyOn(settingsSheet, 'getRange').and.callFake(function (rangeReference) {
+
+                return {
+
+                    B1: projectNameRange,
+                    B2: ticketTypesRange,
+                    B4: closedStatusRange
+                }[rangeReference];
+            });
+        });
+
+        it('should point to the search Jira API', function () {
+
+            var pathUsed;
+            spyOn(jdgs, 'fetchFromJira').and.callFake(function (path) {
+
+                pathUsed = path;
+            });
+
+            jdgs.fetchTicketsFromJira();
+
+            expect(pathUsed.indexOf('search?')).toBe(0);
+        });
+
+        it('should point to the project in JQL as defined in the settings sheet', function () {
+
+            var projectUsed = '';
+            spyOn(jdgs, 'fetchFromJira').and.callFake(function (path) {
+
+                var i,
+                    path = simple.url(path),
+                    jql = decodeURIComponent(path.getParam('jql')).match(/(\w+)\s?=\s?"([\w\s]+)"/);
+
+                for (i = 1; i < jql.length; i = i + 1) {
+
+                    if (jql[i] === 'project') {
+
+                        projectUsed = jql[i + 1];
+                        break;
+                    }
+                }
+            });
+
+            jdgs.fetchTicketsFromJira();
+
+            expect(projectUsed).toBe(projectName);
+        });
+
+        it('should point to the status name of closed tickets in JQL as defined in the settings sheet', function () {
+
+            var closedStatusNameUsed = '';
+
+            spyOn(jdgs, 'fetchFromJira').and.callFake(function (path) {
+
+                var i,
+                    path = simple.url(path),
+                    jqlParts = decodeURIComponent(path.getParam('jql')).match(/(\w+)\s?=\s?"([\w\s]+)"/g),
+                    jqlPart;
+
+                for (i = 0; i < jqlParts.length; i = i + 1) {
+
+                    jqlPart = jqlParts[i].match(/(\w+)\s?=\s?"([\w\s]+)"/);
+
+                    if (jqlPart[1] === 'status') {
+
+                        closedStatusNameUsed = jqlPart[2];
+                        break;
+                    }
+                }
+            });
+
+            jdgs.fetchTicketsFromJira();
+
+            expect(closedStatusNameUsed).toBe(closedStatus);
+        });
+
+        it('should point to the types of tickets in JQL as defined in the settings sheet', function () {
+
+            var ticketTypesUsed,
+                ticketType1 = randomString(),
+                ticketType2 = randomString();
+
+            ticketTypes = ticketType1 + ', "' + ticketType2 + '"';
+            spyOn(jdgs, 'fetchFromJira').and.callFake(function (path) {
+
+                var i,
+                    path = simple.url(path),
+                    jqlParts = decodeURIComponent(path.getParam('jql')).match(/type\sin\s\((.+)\)/),
+                    jqlPart;
+
+                for (i = 0; i < jqlParts.length; i = i + 1) {
+
+                    ticketTypesUsed = jqlParts[1].match(/(\w+)/g);
+                }
+            });
+
+            jdgs.fetchTicketsFromJira();
+
+            expect(ticketTypesUsed).toEqual([ticketType1, ticketType2]);
+        });
+
+        it('should point to tickets that were in the qualifying status in JQL as defined in the settings sheet', function () {});
+        it('should point to tickets that were resolved in JQL after the start date as defined in the settings sheet', function () {});
+        it('should point to tickets that were resolved in JQL before the end date as defined in the settings sheet', function () {});
+        it('should order tickets by resolution date in the JQL', function () {});
 
 // function getStories() {
 //     var allData = {issues: []};
@@ -381,6 +503,6 @@ describe('JiraDataGoogleScript', function () {
 //
 //     return allData;
 // }
-//     });
+    });
 
 });

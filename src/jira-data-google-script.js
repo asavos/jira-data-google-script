@@ -68,6 +68,19 @@ function JiraDataGoogleScript() {
 
         return response.getContentText();
     };
+
+    this.fetchTicketsFromJira = function () {
+
+        var settingsSheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Settings'),
+            projectRange = settingsSheet.getRange('B1'),
+            project = projectRange.getValue(),
+            closedStatusRange = settingsSheet.getRange('B4'),
+            closedStatus = closedStatusRange.getValue(),
+            ticketTypesRange = settingsSheet.getRange('B2'),
+            ticketTypes = ticketTypesRange.getValue();
+
+        this.fetchFromJira('search?jql=project%20%3D%20%22' + project + '%22%20and%20status%20%3D%20%22' + closedStatus + '%22%20type%20in%20(' + ticketTypes + ')');
+    };
 }
 
 

@@ -10,6 +10,7 @@ module.exports = function (config) {
         frameworks: ['jasmine'],
         singleRun: false,
         files: [
+            'bower_components/simple-url/lib/url.js',
             'src/**/*.js',
             'tests/**/*.js'
         ],

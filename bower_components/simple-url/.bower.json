@@ -1,0 +1,34 @@
+{
+  "name": "simple-url",
+  "version": "3.0.0",
+  "homepage": "https://github.com/mycolorway/simple-url",
+  "authors": [
+    "tinyfive <tinyfive@gmail.com>"
+  ],
+  "description": "simple url component",
+  "main": "lib/url.js",
+  "keywords": [
+    "url"
+  ],
+  "license": "MIT",
+  "ignore": [
+    "**/.*",
+    "spec",
+    "node_modules",
+    "vendor",
+    "Gemfile",
+    "Gruntfile.coffee",
+    "package.json",
+    "README.md"
+  ],
+  "_release": "3.0.0",
+  "_resolution": {
+    "type": "version",
+    "tag": "v3.0.0",
+    "commit": "b302ee4bc44ac7bc376f2092aad8622ea1b63388"
+  },
+  "_source": "https://github.com/mycolorway/simple-url.git",
+  "_target": "^3.0.0",
+  "_originalSource": "simple-url",
+  "_direct": true
+}
