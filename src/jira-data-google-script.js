@@ -77,9 +77,11 @@ function JiraDataGoogleScript() {
             closedStatusRange = settingsSheet.getRange('B4'),
             closedStatus = closedStatusRange.getValue(),
             ticketTypesRange = settingsSheet.getRange('B2'),
-            ticketTypes = ticketTypesRange.getValue();
+            ticketTypes = ticketTypesRange.getValue(),
+            qualifyingStatusRange = settingsSheet.getRange('B5'),
+            qualifyingStatus = qualifyingStatusRange.getValue();
 
-        this.fetchFromJira('search?jql=project%20%3D%20%22' + project + '%22%20and%20status%20%3D%20%22' + closedStatus + '%22%20type%20in%20(' + ticketTypes + ')');
+        this.fetchFromJira('search?jql=project%20%3D%20%22' + project + '%22%20and%20status%20%3D%20%22' + closedStatus + '%22%20type%20in%20(' + ticketTypes + ')%20and%20status%20was%20"' + qualifyingStatus + '"');
     };
 }
 

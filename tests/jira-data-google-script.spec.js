@@ -356,7 +356,9 @@ describe('JiraDataGoogleScript', function () {
             closedStatusRange,
             closedStatus,
             ticketTypesRange,
-            ticketTypes;
+            ticketTypes,
+            qualifyingStatusRange,
+            qualifyingStatus;
 
         beforeEach(function () {
 
@@ -381,13 +383,21 @@ describe('JiraDataGoogleScript', function () {
                 return ticketTypes;
             });
 
+            qualifyingStatusRange = new Range();
+            qualifyingStatus = randomString();
+            spyOn(qualifyingStatusRange, 'getValue').and.callFake(function () {
+
+                return qualifyingStatus;
+            });
+
             spyOn(settingsSheet, 'getRange').and.callFake(function (rangeReference) {
 
                 return {
 
                     B1: projectNameRange,
                     B2: ticketTypesRange,
-                    B4: closedStatusRange
+                    B4: closedStatusRange,
+                    B5: qualifyingStatusRange
                 }[rangeReference];
             });
         });
@@ -482,7 +492,21 @@ describe('JiraDataGoogleScript', function () {
             expect(ticketTypesUsed).toEqual([ticketType1, ticketType2]);
         });
 
-        it('should point to tickets that were in the qualifying status in JQL as defined in the settings sheet', function () {});
+        it('should point to tickets that were in the qualifying status in JQL as defined in the settings sheet', function () {
+
+            var qualifyingStatusUsed;
+
+            spyOn(jdgs, 'fetchFromJira').and.callFake(function (path) {
+
+                var path = simple.url(path);
+                qualifyingStatusUsed = decodeURIComponent(path.getParam('jql')).match(/status\swas\s"(.+)"/)[1];
+            });
+
+            jdgs.fetchTicketsFromJira();
+
+            expect(qualifyingStatusUsed).toEqual(qualifyingStatus);
+        });
+
         it('should point to tickets that were resolved in JQL after the start date as defined in the settings sheet', function () {});
         it('should point to tickets that were resolved in JQL before the end date as defined in the settings sheet', function () {});
         it('should order tickets by resolution date in the JQL', function () {});
