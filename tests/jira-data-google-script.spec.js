@@ -212,14 +212,14 @@ describe('JiraDataGoogleScript', function () {
         });
     });
 
-    describe('fetchFromJira()', function () {
+    describe('queryJira()', function () {
 
         it('should display a message box if user credentials have not been set', function () {
 
             userProperties.getProperty.and.returnValue(null);
             spyOn(Browser, 'msgBox');
 
-            jdgs.fetchFromJira();
+            jdgs.queryJira();
 
             expect(userProperties.getProperty).toHaveBeenCalledWith('credentials');
             expect(Browser.msgBox).toHaveBeenCalledTimes(1);
@@ -230,7 +230,7 @@ describe('JiraDataGoogleScript', function () {
 
             userProperties.getProperty.and.returnValue(null);
 
-            expect(jdgs.fetchFromJira()).toBe('');
+            expect(jdgs.queryJira()).toBe('');
         });
 
         it('should return an empty string if the response from Jira is not a status code of 200', function () {
@@ -238,7 +238,7 @@ describe('JiraDataGoogleScript', function () {
             spyOn(response, 'getResponseCode').and.returnValue(404);
             userProperties.getProperty.and.returnValue(randomString());
 
-            expect(jdgs.fetchFromJira()).toBe('');
+            expect(jdgs.queryJira()).toBe('');
         });
 
         it('should display a message box if the response from Jira is not a status code of 200', function () {
@@ -247,7 +247,7 @@ describe('JiraDataGoogleScript', function () {
             spyOn(Browser, 'msgBox');
             userProperties.getProperty.and.returnValue(randomString());
 
-            jdgs.fetchFromJira();
+            jdgs.queryJira();
 
             expect(Browser.msgBox).toHaveBeenCalledTimes(1);
             expect(Browser.msgBox).toHaveBeenCalledWith('Unexpected error fetching data from Jira API.');
@@ -260,7 +260,7 @@ describe('JiraDataGoogleScript', function () {
 
             userProperties.getProperty.and.returnValue(randomString());
 
-            jdgs.fetchFromJira(path);
+            jdgs.queryJira(path);
 
             expect(UrlFetchApp.fetch).toHaveBeenCalledWith(url, jasmine.any(Object));
         });
@@ -275,7 +275,7 @@ describe('JiraDataGoogleScript', function () {
             });
             userProperties.getProperty.and.returnValue(randomString());
 
-            jdgs.fetchFromJira(randomString());
+            jdgs.queryJira(randomString());
 
             expect(headersUsed.Accept).toBe('application/json');
         });
@@ -290,7 +290,7 @@ describe('JiraDataGoogleScript', function () {
             });
             userProperties.getProperty.and.returnValue(randomString());
 
-            jdgs.fetchFromJira(randomString());
+            jdgs.queryJira(randomString());
 
             expect(headersUsed.method).toBe('GET');
         });
@@ -307,7 +307,7 @@ describe('JiraDataGoogleScript', function () {
                 return response;
             });
 
-            jdgs.fetchFromJira(randomString());
+            jdgs.queryJira(randomString());
 
             expect(userProperties.getProperty).toHaveBeenCalledWith('credentials');
             expect(headersUsed.headers.Authorization).toBe(credentials);
@@ -323,7 +323,7 @@ describe('JiraDataGoogleScript', function () {
                 return response;
             });
 
-            jdgs.fetchFromJira(randomString());
+            jdgs.queryJira(randomString());
 
             expect(headersUsed.muteHttpExceptions).toBe(true);
         });
@@ -342,7 +342,7 @@ describe('JiraDataGoogleScript', function () {
                 return response;
             });
 
-            result = jdgs.fetchFromJira(randomString());
+            result = jdgs.queryJira(randomString());
 
             expect(response.getContentText).toHaveBeenCalled();
             expect(result).toBe(responseText);
@@ -425,9 +425,11 @@ describe('JiraDataGoogleScript', function () {
         it('should point to the search Jira API', function () {
 
             var pathUsed;
-            spyOn(jdgs, 'fetchFromJira').and.callFake(function (path) {
+            spyOn(jdgs, 'queryJira').and.callFake(function (path) {
 
                 pathUsed = path;
+
+                return '{}';
             });
 
             jdgs.fetchTicketsFromJira();
@@ -438,7 +440,7 @@ describe('JiraDataGoogleScript', function () {
         it('should point to the project in JQL as defined in the settings sheet', function () {
 
             var projectUsed = '';
-            spyOn(jdgs, 'fetchFromJira').and.callFake(function (path) {
+            spyOn(jdgs, 'queryJira').and.callFake(function (path) {
 
                 var i,
                     path = simple.url(path),
@@ -452,6 +454,8 @@ describe('JiraDataGoogleScript', function () {
                         break;
                     }
                 }
+
+                return '{}';
             });
 
             jdgs.fetchTicketsFromJira();
@@ -463,7 +467,7 @@ describe('JiraDataGoogleScript', function () {
 
             var closedStatusNameUsed = '';
 
-            spyOn(jdgs, 'fetchFromJira').and.callFake(function (path) {
+            spyOn(jdgs, 'queryJira').and.callFake(function (path) {
 
                 var i,
                     path = simple.url(path),
@@ -480,6 +484,8 @@ describe('JiraDataGoogleScript', function () {
                         break;
                     }
                 }
+
+                return '{}';
             });
 
             jdgs.fetchTicketsFromJira();
@@ -494,7 +500,7 @@ describe('JiraDataGoogleScript', function () {
                 ticketType2 = randomString();
 
             ticketTypes = ticketType1 + ', "' + ticketType2 + '"';
-            spyOn(jdgs, 'fetchFromJira').and.callFake(function (path) {
+            spyOn(jdgs, 'queryJira').and.callFake(function (path) {
 
                 var i,
                     path = simple.url(path),
@@ -505,6 +511,8 @@ describe('JiraDataGoogleScript', function () {
 
                     ticketTypesUsed = jqlParts[1].match(/(\w+)/g);
                 }
+
+                return '{}';
             });
 
             jdgs.fetchTicketsFromJira();
@@ -516,15 +524,17 @@ describe('JiraDataGoogleScript', function () {
 
             var qualifyingStatusUsed;
 
-            spyOn(jdgs, 'fetchFromJira').and.callFake(function (path) {
+            spyOn(jdgs, 'queryJira').and.callFake(function (path) {
 
                 var path = simple.url(path);
                 qualifyingStatusUsed = decodeURIComponent(path.getParam('jql')).match(/status\swas\s"(.+?)"/)[1];
+
+                return '{}';
             });
 
             jdgs.fetchTicketsFromJira();
 
-            expect(qualifyingStatusUsed).toEqual(qualifyingStatus);
+            expect(qualifyingStatusUsed).toBe(qualifyingStatus);
         });
 
         it('should point to tickets that were resolved in JQL after the start date as defined in the settings sheet', function () {
@@ -532,15 +542,17 @@ describe('JiraDataGoogleScript', function () {
             var startDateUsed;
 
             spyOn(jdgs, 'getStartDateFromSettings').and.returnValue(startDate);
-            spyOn(jdgs, 'fetchFromJira').and.callFake(function (path) {
+            spyOn(jdgs, 'queryJira').and.callFake(function (path) {
 
                 var path = simple.url(path);
                 startDateUsed = decodeURIComponent(path.getParam('jql')).match(/resolutionDate\s>\s"(.+?)"/)[1];
+
+                return '{}';
             });
 
             jdgs.fetchTicketsFromJira();
 
-            expect(startDateUsed).toEqual(startDate);
+            expect(startDateUsed).toBe(startDate);
         });
 
         it('should point to tickets that were resolved in JQL before the end date as defined in the settings sheet', function () {
@@ -548,10 +560,12 @@ describe('JiraDataGoogleScript', function () {
             var endDateUsed;
 
             spyOn(jdgs, 'getEndDateFromSettings').and.returnValue(endDate);
-            spyOn(jdgs, 'fetchFromJira').and.callFake(function (path) {
+            spyOn(jdgs, 'queryJira').and.callFake(function (path) {
 
                 var path = simple.url(path);
                 endDateUsed = decodeURIComponent(path.getParam('jql')).match(/resolutionDate\s<\s"(.+?)"/)[1];
+
+                return '{}';
             });
 
             jdgs.fetchTicketsFromJira();
@@ -563,43 +577,65 @@ describe('JiraDataGoogleScript', function () {
 
             var orderByUsed;
 
-            spyOn(jdgs, 'fetchFromJira').and.callFake(function (path) {
+            spyOn(jdgs, 'queryJira').and.callFake(function (path) {
 
                 var path = simple.url(path);
-                orderByUsed = decodeURIComponent(path.getParam('jql')).match(/order\sby\s(resolutionDate)\sDESC$/)[1];
+                orderByUsed = decodeURIComponent(path.getParam('jql')).match(/order\sby\s(resolutionDate)\sDESC/)[1];
+
+                return '{}';
             });
 
             jdgs.fetchTicketsFromJira();
 
-            expect(orderByUsed).toEqual('resolutionDate');
+            expect(orderByUsed).toBe('resolutionDate');
         });
 
-        /*
-         project = "Content Team" and
-         status = done and
-         type in (bug,story,'technical story') and
-         status was "in development" and
-         resolutiondate > 'startDate' and
-         resolutiondate < 'endDate'
-         order by resolutiondate DESC"
-         */
+        it('should instruct Jira to expand the response with the changelog in the JQL', function () {
 
-// function getStories() {
-//     var allData = {issues: []};
-//     var data = {startAt: 0,maxResults: 0,total: 1};
-//     var startDate = getStartDateFromSettings();
-//     var endDate = getEndDateFromSettings();
-//     var jql = "project%20%3D%20%22Content%20Team%22%20and%20status%20%3D%20done%20and%20type%20in%20(bug%2Cstory%2C%27technical%20story%27)%20and%20status%20was%20%22in%20development%22and%20resolutiondate%20%3E%20'" + startDate + "'%20and%20resolutiondate%20%3C%20'" + endDate + "'%20order%20by%20resolutiondate%20DESC";
-//     //Logger.log(jql);
-//
-//     while (data.startAt + data.maxResults < data.total) {
-//         data = JSON.parse(getDataForAPI("search?jql=" + jql + "&expand=changelog&maxResults=" + C_MAX_RESULTS));
-//         allData.issues = allData.issues.concat(data.issues);
-//         startAt = data.startAt + data.maxResults;
-//     }
-//
-//     return allData;
-// }
+            var expandByUsed;
+
+            spyOn(jdgs, 'queryJira').and.callFake(function (path) {
+
+                var path = simple.url(path);
+                expandByUsed = path.getParam('expand');
+
+                return '{}';
+            });
+
+            jdgs.fetchTicketsFromJira();
+
+            expect(expandByUsed).toBe('changelog');
+        });
+
+        it('should instruct Jira to limit the response size to match $scope.maxResults in the JQL', function () {
+
+            var limitUsed;
+            jdgs.maxResults = randomNumber();
+            spyOn(jdgs, 'queryJira').and.callFake(function (path) {
+
+                var path = simple.url(path);
+                limitUsed = parseInt(path.getParam('maxResults'));
+
+                return '{}';
+            });
+
+            jdgs.fetchTicketsFromJira();
+
+            expect(limitUsed).toBe(jdgs.maxResults);
+        });
+
+        it('should return the response from Jira as parsed JSON', function () {
+
+            var response = {
+                something: randomString()
+            },
+                result;
+
+            spyOn(jdgs, 'queryJira').and.returnValue(JSON.stringify(response))
+
+            result = jdgs.fetchTicketsFromJira();
+
+            expect(result).toEqual(response);
+        });
     });
-
 });

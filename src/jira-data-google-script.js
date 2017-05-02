@@ -40,7 +40,7 @@ function JiraDataGoogleScript() {
         return Utilities.formatDate(new Date(endDate), 'GMT', 'yyyy/MM/dd');
     };
 
-    this.fetchFromJira = function (path) {
+    this.queryJira = function (path) {
 
         var credentials = PropertiesService.getUserProperties().getProperty('credentials'),
             response;
@@ -48,6 +48,7 @@ function JiraDataGoogleScript() {
         if (credentials === null) {
 
             Browser.msgBox('Jira authentication required. Select Jira > Set Jira credentials.');
+            return '';
         }
 
         response = UrlFetchApp.fetch('https://brighttalktech.jira.com/rest/api/2/' + path, {
@@ -64,6 +65,7 @@ function JiraDataGoogleScript() {
         if (response.getResponseCode() !== 200) {
 
             Browser.msgBox('Unexpected error fetching data from Jira API.');
+            return '';
         }
 
         return response.getContentText();
@@ -85,7 +87,7 @@ function JiraDataGoogleScript() {
             closedStatusRange = settingsSheet.getRange('B6'),
             closedStatus = closedStatusRange.getValue();
 
-        this.fetchFromJira('search?jql=project%20%3D%20%22' + project + '%22%20and%20status%20%3D%20%22' + closedStatus + '%22%20type%20in%20(' + ticketTypes + ')%20and%20status%20was%20"' + qualifyingStatus + '"%20resolutionDate%20%3E%20"' + startDate + '"%20and%20resolutionDate%20%3C%20"' + endDate + '"%20order%20by%20resolutionDate%20DESC');
+        return JSON.parse(this.queryJira('search?jql=project%20%3D%20%22' + project + '%22%20and%20status%20%3D%20%22' + closedStatus + '%22%20type%20in%20(' + ticketTypes + ')%20and%20status%20was%20"' + qualifyingStatus + '"%20resolutionDate%20%3E%20"' + startDate + '"%20and%20resolutionDate%20%3C%20"' + endDate + '"%20order%20by%20resolutionDate%20DESC&expand=changelog&maxResults=' + this.maxResults));
     };
 }
 

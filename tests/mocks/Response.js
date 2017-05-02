@@ -7,6 +7,6 @@ function Response() {
 
     this.getContentText = function () {
 
-        return '';
+        return '{}';
     };
 }
