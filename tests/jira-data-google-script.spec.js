@@ -353,10 +353,14 @@ describe('JiraDataGoogleScript', function () {
 
         var projectNameRange,
             projectName,
-            closedStatusRange,
-            closedStatus,
             ticketTypesRange,
             ticketTypes,
+            startDateRange,
+            startDate,
+            endDateRange,
+            endDate,
+            closedStatusRange,
+            closedStatus,
             qualifyingStatusRange,
             qualifyingStatus;
 
@@ -369,18 +373,32 @@ describe('JiraDataGoogleScript', function () {
                 return projectName;
             });
 
-            closedStatusRange = new Range();
-            closedStatus = randomString();
-            spyOn(closedStatusRange, 'getValue').and.callFake(function () {
-
-                return closedStatus;
-            });
-
             ticketTypesRange = new Range();
             ticketTypes = randomString();
             spyOn(ticketTypesRange, 'getValue').and.callFake(function () {
 
                 return ticketTypes;
+            });
+
+            startDateRange = new Range();
+            startDate = randomString();
+            spyOn(startDateRange, 'getValue').and.callFake(function () {
+
+                return startDate;
+            });
+
+            endDateRange = new Range();
+            endDate = randomString();
+            spyOn(endDateRange, 'getValue').and.callFake(function () {
+
+                return endDate;
+            });
+
+            closedStatusRange = new Range();
+            closedStatus = randomString();
+            spyOn(closedStatusRange, 'getValue').and.callFake(function () {
+
+                return closedStatus;
             });
 
             qualifyingStatusRange = new Range();
@@ -396,8 +414,10 @@ describe('JiraDataGoogleScript', function () {
 
                     B1: projectNameRange,
                     B2: ticketTypesRange,
-                    B4: closedStatusRange,
-                    B5: qualifyingStatusRange
+                    B3: startDateRange,
+                    B4: endDateRange,
+                    B5: qualifyingStatusRange,
+                    B6: closedStatusRange
                 }[rangeReference];
             });
         });
@@ -499,7 +519,7 @@ describe('JiraDataGoogleScript', function () {
             spyOn(jdgs, 'fetchFromJira').and.callFake(function (path) {
 
                 var path = simple.url(path);
-                qualifyingStatusUsed = decodeURIComponent(path.getParam('jql')).match(/status\swas\s"(.+)"/)[1];
+                qualifyingStatusUsed = decodeURIComponent(path.getParam('jql')).match(/status\swas\s"(.+?)"/)[1];
             });
 
             jdgs.fetchTicketsFromJira();
@@ -507,9 +527,62 @@ describe('JiraDataGoogleScript', function () {
             expect(qualifyingStatusUsed).toEqual(qualifyingStatus);
         });
 
-        it('should point to tickets that were resolved in JQL after the start date as defined in the settings sheet', function () {});
-        it('should point to tickets that were resolved in JQL before the end date as defined in the settings sheet', function () {});
-        it('should order tickets by resolution date in the JQL', function () {});
+        it('should point to tickets that were resolved in JQL after the start date as defined in the settings sheet', function () {
+
+            var startDateUsed;
+
+            spyOn(jdgs, 'getStartDateFromSettings').and.returnValue(startDate);
+            spyOn(jdgs, 'fetchFromJira').and.callFake(function (path) {
+
+                var path = simple.url(path);
+                startDateUsed = decodeURIComponent(path.getParam('jql')).match(/resolutionDate\s>\s"(.+?)"/)[1];
+            });
+
+            jdgs.fetchTicketsFromJira();
+
+            expect(startDateUsed).toEqual(startDate);
+        });
+
+        it('should point to tickets that were resolved in JQL before the end date as defined in the settings sheet', function () {
+
+            var endDateUsed;
+
+            spyOn(jdgs, 'getEndDateFromSettings').and.returnValue(endDate);
+            spyOn(jdgs, 'fetchFromJira').and.callFake(function (path) {
+
+                var path = simple.url(path);
+                endDateUsed = decodeURIComponent(path.getParam('jql')).match(/resolutionDate\s<\s"(.+?)"/)[1];
+            });
+
+            jdgs.fetchTicketsFromJira();
+
+            expect(endDateUsed).toEqual(endDate);
+        });
+
+        it('should order tickets by resolution date in the JQL', function () {
+
+            var orderByUsed;
+
+            spyOn(jdgs, 'fetchFromJira').and.callFake(function (path) {
+
+                var path = simple.url(path);
+                orderByUsed = decodeURIComponent(path.getParam('jql')).match(/order\sby\s(resolutionDate)\sDESC$/)[1];
+            });
+
+            jdgs.fetchTicketsFromJira();
+
+            expect(orderByUsed).toEqual('resolutionDate');
+        });
+
+        /*
+         project = "Content Team" and
+         status = done and
+         type in (bug,story,'technical story') and
+         status was "in development" and
+         resolutiondate > 'startDate' and
+         resolutiondate < 'endDate'
+         order by resolutiondate DESC"
+         */
 
 // function getStories() {
 //     var allData = {issues: []};

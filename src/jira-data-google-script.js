@@ -74,17 +74,20 @@ function JiraDataGoogleScript() {
         var settingsSheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Settings'),
             projectRange = settingsSheet.getRange('B1'),
             project = projectRange.getValue(),
-            closedStatusRange = settingsSheet.getRange('B4'),
-            closedStatus = closedStatusRange.getValue(),
             ticketTypesRange = settingsSheet.getRange('B2'),
             ticketTypes = ticketTypesRange.getValue(),
+            startDateRange = settingsSheet.getRange('B3'),
+            startDate = startDateRange.getValue(),
+            endDateRange = settingsSheet.getRange('B4'),
+            endDate = endDateRange.getValue(),
             qualifyingStatusRange = settingsSheet.getRange('B5'),
-            qualifyingStatus = qualifyingStatusRange.getValue();
+            qualifyingStatus = qualifyingStatusRange.getValue(),
+            closedStatusRange = settingsSheet.getRange('B6'),
+            closedStatus = closedStatusRange.getValue();
 
-        this.fetchFromJira('search?jql=project%20%3D%20%22' + project + '%22%20and%20status%20%3D%20%22' + closedStatus + '%22%20type%20in%20(' + ticketTypes + ')%20and%20status%20was%20"' + qualifyingStatus + '"');
+        this.fetchFromJira('search?jql=project%20%3D%20%22' + project + '%22%20and%20status%20%3D%20%22' + closedStatus + '%22%20type%20in%20(' + ticketTypes + ')%20and%20status%20was%20"' + qualifyingStatus + '"%20resolutionDate%20%3E%20"' + startDate + '"%20and%20resolutionDate%20%3C%20"' + endDate + '"%20order%20by%20resolutionDate%20DESC');
     };
 }
-
 
 //original script:
 
