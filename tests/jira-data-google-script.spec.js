@@ -627,11 +627,12 @@ describe('JiraDataGoogleScript', function () {
         it('should return the response from Jira as parsed JSON', function () {
 
             var response = {
+
                 something: randomString()
             },
                 result;
 
-            spyOn(jdgs, 'queryJira').and.returnValue(JSON.stringify(response))
+            spyOn(jdgs, 'queryJira').and.returnValue(JSON.stringify(response));
 
             result = jdgs.fetchTicketsFromJira();
 

@@ -114,7 +114,7 @@ function JiraDataGoogleScript() {
 //     Browser.msgBox("Jira username and password saved.");
 // }
 //
-// function jiraPullManual() { - not done
+// function jiraPullManual() { - not done, no need
 //     jiraPull();
 // }
 //
@@ -153,7 +153,7 @@ function JiraDataGoogleScript() {
 //     return allData;
 // }
 //
-// function getDataForAPI(path) { - named fetchFromJira
+// function getDataForAPI(path) { - named queryJira
 //     var url = "https://brighttalktech.jira.com/rest/api/2/" + path;
 //     var digestfull = PropertiesService.getUserProperties().getProperty("digest");
 //
