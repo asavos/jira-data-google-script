@@ -1,20 +1,33 @@
-module.exports = function( grunt ) {
+/*globals module*/
 
-	"use strict";
+module.exports = function (grunt) {
 
-	grunt.loadNpmTasks('grunt-karma');
+    "use strict";
 
-	grunt.initConfig({
+    grunt.loadNpmTasks('grunt-karma');
+    grunt.loadNpmTasks('grunt-contrib-clean');
+    grunt.loadNpmTasks('grunt-contrib-concat');
 
-		karma: {
+    grunt.initConfig({
 
-			unit: {
+        karma: {
 
-				options: {
+            unit: {
 
-					configFile: 'karma.conf.js'
-				}
-			}
-		}
-	});
+                options: {
+
+                    configFile: 'karma.conf.js'
+                }
+            }
+        },
+        clean: ['dist/'],
+        concat: {
+            build: {
+                src: ['src/jira-data-google-script.js', 'bootstrap/bootstrap.js'],
+                dest: 'dist/jdgs.js',
+            }
+        }
+    });
+
+    grunt.registerTask('default', ['karma', 'clean', 'concat']);
 };

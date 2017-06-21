@@ -1,4 +1,4 @@
-/*globals describe, beforeEach, it, expect*/
+/*globals describe, beforeEach, it, expect, spyOn, jasmine*/
 
 describe('JiraDataGoogleScript', function () {
 
@@ -47,70 +47,6 @@ describe('JiraDataGoogleScript', function () {
     it('should set a maxResults property to 1,000', function () {
 
         expect(jdgs.maxResults).toBe(1000);
-    });
-
-    describe('init()', function () {
-
-        it('should create a Jira menu item', function () {
-
-            spyOn(activeSpreadsheet, 'addMenu');
-
-            jdgs.init();
-
-            expect(activeSpreadsheet.addMenu).toHaveBeenCalledWith('Jira', jasmine.any(Array));
-        });
-
-        it('should create a "Set credentials..." child menu item to the Jira menu', function () {
-
-            var menuItemsUsed;
-            spyOn(activeSpreadsheet, 'addMenu').and.callFake(function (menuName, menuItems) {
-
-                menuItemsUsed = menuItems;
-            });
-
-            jdgs.init();
-
-            expect(menuItemsUsed[0].name).toBe('Set credentials...');
-        });
-
-        it('should activate the setCredentials function when the "Set credentials..." child menu item is clicked', function () {
-
-            var menuItemsUsed;
-            spyOn(activeSpreadsheet, 'addMenu').and.callFake(function (menuName, menuItems) {
-
-                menuItemsUsed = menuItems;
-            });
-
-            jdgs.init();
-
-            expect(menuItemsUsed[0].functionName).toBe('setCredentials');
-        });
-
-        it('should create a "Refresh data" child menu item to the Jira menu', function () {
-
-            var menuItemsUsed;
-            spyOn(activeSpreadsheet, 'addMenu').and.callFake(function (menuName, menuItems) {
-
-                menuItemsUsed = menuItems;
-            });
-
-            jdgs.init();
-
-            expect(menuItemsUsed[1].name).toBe('Refresh data');
-        });
-
-        it('should activate the fetchJiraData function when the "Refresh data" child menu item is clicked', function () {
-
-            var menuItemsUsed;
-            spyOn(activeSpreadsheet, 'addMenu').and.callFake(function (menuName, menuItems) {
-
-                menuItemsUsed = menuItems;
-            });
-
-            jdgs.init();
-
-            expect(menuItemsUsed[1].functionName).toBe('fetchJiraData');
-        });
     });
 
     describe('setCredentials()', function () {
@@ -223,7 +159,7 @@ describe('JiraDataGoogleScript', function () {
 
             expect(userProperties.getProperty).toHaveBeenCalledWith('credentials');
             expect(Browser.msgBox).toHaveBeenCalledTimes(1);
-            expect(Browser.msgBox).toHaveBeenCalledWith('Jira authentication required. Select Jira > Set Jira credentials.');
+            expect(Browser.msgBox).toHaveBeenCalledWith('Jira authentication required. Select Jira > Set Jira credentials...');
         });
 
         it('should return an empty string if user credentials have not been set', function () {
@@ -241,16 +177,60 @@ describe('JiraDataGoogleScript', function () {
             expect(jdgs.queryJira()).toBe('');
         });
 
-        it('should display a message box if the response from Jira is not a status code of 200', function () {
+        it('should display an "Unexpected error" message box if the response from Jira is not a status code of 200', function () {
 
+            var messageUsed;
             spyOn(response, 'getResponseCode').and.returnValue(404);
             spyOn(Browser, 'msgBox');
             userProperties.getProperty.and.returnValue(randomString());
 
             jdgs.queryJira();
 
+            messageUsed = Browser.msgBox.calls.first().args[0];
+
             expect(Browser.msgBox).toHaveBeenCalledTimes(1);
-            expect(Browser.msgBox).toHaveBeenCalledWith('Unexpected error fetching data from Jira API.');
+            expect(messageUsed.indexOf('Unexpected error fetching data from Jira API ')).toBe(0);
+        });
+
+        it('should display the error code in the message box if the response from Jira is not a status code of 200', function () {
+
+            var errorCode = randomNumber(),
+                formattedErrorCode,
+                messageUsed,
+                errorCodeUsed;
+
+            errorCode = errorCode === 200 ? 199 : errorCode;
+            formattedErrorCode = '(' + errorCode + ')';
+            spyOn(response, 'getResponseCode').and.returnValue(errorCode);
+            spyOn(Browser, 'msgBox');
+            userProperties.getProperty.and.returnValue(randomString());
+
+            jdgs.queryJira();
+
+            messageUsed = Browser.msgBox.calls.first().args[0];
+            errorCodeUsed = messageUsed.split('Unexpected error fetching data from Jira API ')[1];
+
+            expect(errorCodeUsed).toBe(formattedErrorCode);
+        });
+
+        it('should display a message box stating the user is not authorised with Jira if the response from Jira is a status code of 401', function () {
+
+            spyOn(response, 'getResponseCode').and.returnValue(401);
+            spyOn(Browser, 'msgBox');
+            userProperties.getProperty.and.returnValue(randomString());
+
+            jdgs.queryJira();
+
+            expect(Browser.msgBox).toHaveBeenCalledTimes(1);
+            expect(Browser.msgBox).toHaveBeenCalledWith('Not authorised with Jira - try setting the correct username and password in Jira > Set credentials...');
+        });
+
+        it('should return an empty string if the response from Jira is a status code of 401', function () {
+
+            spyOn(response, 'getResponseCode').and.returnValue(401);
+            userProperties.getProperty.and.returnValue(randomString());
+
+            expect(jdgs.queryJira()).toBe('');
         });
 
         it('should call the Jira rest API using the given path argument', function () {
@@ -638,5 +618,85 @@ describe('JiraDataGoogleScript', function () {
 
             expect(result).toEqual(response);
         });
+    });
+
+    describe('getFieldsFromJira()', function () {
+
+        beforeEach(function () {
+
+            spyOn(jdgs, 'queryJira').and.returnValue('{}');
+        });
+
+        it('should query the Jira field API using the queryJira function', function () {
+
+            jdgs.getFieldsFromJira();
+
+            expect(jdgs.queryJira).toHaveBeenCalledWith('field');
+        });
+
+        it('should return a JSON representation of the value from queryJira', function () {
+
+            var response = {
+
+                key: randomString()
+            };
+            jdgs.queryJira.and.returnValue(JSON.stringify(response));
+
+            expect(jdgs.getFieldsFromJira()).toEqual(response);
+        });
+    });
+
+    describe('getFields()', function () {
+
+        var fields;
+
+        beforeEach(function () {
+
+            fields = [{
+
+                id: randomNumber(),
+                name: randomString(),
+            }, {
+
+                id: randomNumber(),
+                name: randomString(),
+            }];
+
+            spyOn(jdgs, 'getFieldsFromJira').and.returnValue(fields);
+        });
+
+        it('should return an object with an "ids" key as an array of field IDs', function () {
+
+            var result = jdgs.getFields();
+
+            expect(result.ids[0]).toBe(fields[0].id);
+            expect(result.ids[1]).toBe(fields[1].id);
+        });
+
+        it('should return an object with a "names" key as an array of field names', function () {
+
+            var result = jdgs.getFields();
+
+            expect(result.names[0]).toBe(fields[0].name);
+            expect(result.names[1]).toBe(fields[1].name);
+        });
+
+        it('should return an object with a "names" key with lower case names', function () {
+
+            var lowerCaseFieldName = randomString(),
+                upperCaseFieldName = lowerCaseFieldName.toUpperCase(),
+                result;
+
+            fields[0].name = upperCaseFieldName;
+
+            result = jdgs.getFields();
+
+            expect(result.names[0]).toBe(lowerCaseFieldName);
+        });
+    });
+
+    describe('...()', function () {
+
+        it('should ...', function () {});
     });
 });
